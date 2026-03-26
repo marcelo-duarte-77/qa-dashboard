@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard QA — Claint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        body { background: #09090b; color: #fafafa; font-family: 'Inter', system-ui, sans-serif; }
+        .card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #18181b; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+        .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+    <div class="max-w-7xl mx-auto fade-in">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">Dashboard QA</h1>
+                <p class="text-zinc-400 mt-1">Claint — Panorama de Qualidade</p>
+            </div>
+            <div class="text-right text-sm text-zinc-500">
+                <div>Gerado em 2026-03-26 02:40</div>
+                <div class="mt-1"><code class="bg-zinc-800 px-2 py-0.5 rounded text-xs">python generate-dashboard.py</code> para atualizar</div>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="card p-5">
+                <div class="text-zinc-400 text-sm mb-1">Total de Bugs</div>
+                <div class="text-4xl font-bold">269</div>
+                <div class="text-zinc-500 text-xs mt-1">reportados no Jira</div>
+            </div>
+            <div class="card p-5 glow-green">
+                <div class="text-zinc-400 text-sm mb-1">Taxa de Resolucao</div>
+                <div class="text-4xl font-bold text-green-400">81.8%</div>
+                <div class="text-zinc-500 text-xs mt-1">220 resolvidos / 49 abertos</div>
+            </div>
+            <div class="card p-5 glow-red">
+                <div class="text-zinc-400 text-sm mb-1">Criticos Abertos</div>
+                <div class="text-4xl font-bold text-red-400">16</div>
+                <div class="text-zinc-500 text-xs mt-1">High + Highest sem resolucao</div>
+            </div>
+            <div class="card p-5">
+                <div class="text-zinc-400 text-sm mb-1">Sem Responsavel</div>
+                <div class="text-4xl font-bold text-orange-400">19</div>
+                <div class="text-zinc-500 text-xs mt-1">bugs abertos nao atribuidos</div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Status Donut -->
+            <div class="card p-6">
+                <h2 class="text-lg font-semibold mb-4">Por Status</h2>
+                <div class="flex items-center justify-center" style="height:280px">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            <!-- Priority Bar -->
+            <div class="card p-6">
+                <h2 class="text-lg font-semibold mb-4">Por Prioridade</h2>
+                <div style="height:280px">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Completion -->
+        <div class="card p-6 mb-8">
+            <h2 class="text-lg font-semibold mb-2">Completude por Feature</h2>
+            <p class="text-zinc-500 text-sm mb-4">Percentual de bugs resolvidos por feature (resolvidos/total). Badges vermelhos indicam quantidade de bugs High ou Highest ainda abertos.</p>
+            
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Clientes</span>
+                    <span class="ml-2 inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full"><svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L1 18h18L10 2zm0 4l6.5 11h-13L10 6z"/><rect x="9" y="9" width="2" height="4"/><rect x="9" y="14" width="2" height="2"/></svg>2 High+</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#eab308">78.7%</span>
+                    <span class="text-xs text-zinc-500">37/47</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 78.7%; background: #eab308"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Agentes</span>
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#22c55e">93.0%</span>
+                    <span class="text-xs text-zinc-500">40/43</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 93.0%; background: #22c55e"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Reuniões</span>
+                    <span class="ml-2 inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full"><svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L1 18h18L10 2zm0 4l6.5 11h-13L10 6z"/><rect x="9" y="9" width="2" height="4"/><rect x="9" y="14" width="2" height="2"/></svg>8 High+</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#eab308">55.3%</span>
+                    <span class="text-xs text-zinc-500">21/38</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 55.3%; background: #eab308"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Chat</span>
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#22c55e">100.0%</span>
+                    <span class="text-xs text-zinc-500">34/34</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 100.0%; background: #22c55e"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Bases</span>
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#22c55e">89.3%</span>
+                    <span class="text-xs text-zinc-500">25/28</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 89.3%; background: #22c55e"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Oportunidades</span>
+                    <span class="ml-2 inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full"><svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L1 18h18L10 2zm0 4l6.5 11h-13L10 6z"/><rect x="9" y="9" width="2" height="4"/><rect x="9" y="14" width="2" height="2"/></svg>2 High+</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#22c55e">81.8%</span>
+                    <span class="text-xs text-zinc-500">18/22</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 81.8%; background: #22c55e"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Sem Epic</span>
+                    <span class="ml-2 inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full"><svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L1 18h18L10 2zm0 4l6.5 11h-13L10 6z"/><rect x="9" y="9" width="2" height="4"/><rect x="9" y="14" width="2" height="2"/></svg>1 High+</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#22c55e">80.0%</span>
+                    <span class="text-xs text-zinc-500">16/20</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 80.0%; background: #22c55e"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Configurações</span>
+                    <span class="ml-2 inline-flex items-center gap-1 text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full"><svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L1 18h18L10 2zm0 4l6.5 11h-13L10 6z"/><rect x="9" y="9" width="2" height="4"/><rect x="9" y="14" width="2" height="2"/></svg>3 High+</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#eab308">76.5%</span>
+                    <span class="text-xs text-zinc-500">13/17</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 76.5%; background: #eab308"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Tarefas</span>
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#22c55e">92.3%</span>
+                    <span class="text-xs text-zinc-500">12/13</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 92.3%; background: #22c55e"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Perfil</span>
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#eab308">66.7%</span>
+                    <span class="text-xs text-zinc-500">2/3</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 66.7%; background: #eab308"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Login</span>
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#f97316">0.0%</span>
+                    <span class="text-xs text-zinc-500">0/2</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 1.5%; background: #f97316"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Market Data</span>
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#22c55e">100.0%</span>
+                    <span class="text-xs text-zinc-500">1/1</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 100.0%; background: #22c55e"></div>
+            </div>
+        </div>
+        <div class="mb-3 py-2 px-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
+            <div class="flex justify-between items-center mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Landing Page</span>
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono" style="color:#22c55e">100.0%</span>
+                    <span class="text-xs text-zinc-500">1/1</span>
+                </div>
+            </div>
+            <div class="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all" style="width: 100.0%; background: #22c55e"></div>
+            </div>
+        </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Feature Stacked Bar -->
+            <div class="card p-6">
+                <h2 class="text-lg font-semibold mb-4">Bugs por Feature</h2>
+                <div style="height:350px">
+                    <canvas id="featureChart"></canvas>
+                </div>
+            </div>
+            <!-- Heatmap: Feature x Priority -->
+            <div class="card p-6">
+                <h2 class="text-lg font-semibold mb-4">Heatmap: Feature x Prioridade</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-zinc-400 border-b border-zinc-700">
+                                <th class="text-left py-2 px-3">Feature</th>
+                                <th class="text-center py-2 px-2">Highest</th>
+                                <th class="text-center py-2 px-2">High</th>
+                                <th class="text-center py-2 px-2">Medium</th>
+                                <th class="text-center py-2 px-2">Low</th>
+                            </tr>
+                        </thead>
+                        <tbody id="heatmapBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open Bugs Table -->
+        <div class="card p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">Bugs Abertos (49)</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="searchBugs" placeholder="Filtrar..." class="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-zinc-500" />
+                    <select id="filterPriority" class="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none">
+                        <option value="">Todas prioridades</option>
+                        <option value="Highest">Highest</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full" id="bugsTable">
+                    <thead>
+                        <tr class="text-zinc-400 text-sm border-b border-zinc-700">
+                            <th class="text-left py-2 px-4">Key</th>
+                            <th class="text-left py-2 px-4">Titulo</th>
+                            <th class="text-left py-2 px-4">Feature</th>
+                            <th class="text-left py-2 px-4">Prioridade</th>
+                            <th class="text-left py-2 px-4">SP</th>
+                            <th class="text-left py-2 px-4">Status</th>
+                            <th class="text-left py-2 px-4">Responsavel</th>
+                            <th class="text-left py-2 px-4">Idade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-749" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-749</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Oportunidades] API PUT pipeline-items aceita edição sem permissão de escrita (retorna 200 em vez de 403)</td>
+            <td class="py-3 px-4 text-sm">Oportunidades</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">9</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">3d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-762" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-762</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Configurações] API: MEMBER acessa /v1/super-admin/organizations sem bloqueio (retorna 200)</td>
+            <td class="py-3 px-4 text-sm">Configurações</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">9</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">2d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-760" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-760</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Configurações] MEMBER acessa páginas de Super Admin (organizations, usage, jobs) — RBAC não bloqueia rotas administrativas</td>
+            <td class="py-3 px-4 text-sm">Configurações</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">9</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">2d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-745" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-745</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Recuperar Senha) Erro exibido ao criar nova senha, porém senha é alterada com sucesso</td>
+            <td class="py-3 px-4 text-sm">-</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">8</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">3d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-769" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-769</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reunioes] Reunioes sincronizadas do Google Calendar ficam presas com status IN_PROGRESS e nao sao clicaveis</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">8</td>
+            <td class="py-3 px-4 text-sm">Em andamento</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">2d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-785" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-785</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reunioes] Preparacao: 'Erro ao vincular clientes' ao selecionar cliente na tela inicial</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">8</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-754" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-754</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Configurações] Botão "Novo membro" aparece sem guard de role (visível para MEMBER)</td>
+            <td class="py-3 px-4 text-sm">Configurações</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">7</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">3d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-761" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-761</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Configurações] API: DELETE /v1/members/:id com token MEMBER retorna 500 em vez de 403</td>
+            <td class="py-3 px-4 text-sm">Configurações</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">7</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">2d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-843" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-843</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reuniões] Acionáveis não geram notas na timeline do cliente — sem auditoria</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">7</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-830" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-830</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reuniões] Nota criada no sidesheet de acionáveis é perdida e irrecuperável</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">7</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-824" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-824</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reuniões] Criar tarefa via acionáveis retorna 'Invalid item data' mas cria tarefa — duplicatas</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">7</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-814" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-814</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reuniões] Recursion limit of 25 / HTTP 400 ao processar reunião</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">7</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-781" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-781</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reunioes] Chat: indicador Pensando nao aparece durante geracao de resposta IA</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">7</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-747" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-747</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Recuperar Senha) Input de nova senha fica bloqueado/readonly intermitentemente</td>
+            <td class="py-3 px-4 text-sm">-</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">6</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">3d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-819" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-819</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Clientes] Endereço e contas não ficam gravados ao criar/editar cliente</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">6</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-810" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-810</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reuniões] Modal de remoção do meetbot desaparece antes de confirmar — redirecionamento prematuro</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">6</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-783" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-783</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reunioes] Transcricao: editar nome de speaker nao reflete na UI sem recarregar pagina</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">6</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-782" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-782</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reunioes] Chat: botoes de feedback (positivo/negativo) retornam 'Erro ao enviar feedback'</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">6</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-750" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-750</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Oportunidades] Botão "Cancelar" do sheet de criar pipeline não responde após criação com sucesso</td>
+            <td class="py-3 px-4 text-sm">Oportunidades</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">5</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">3d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-763" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-763</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Clientes] Coluna Email vazia na listagem de clientes — dado não renderizado na tabela</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">5</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">2d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-804" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-804</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Bases] Modelo não consegue ler arquivos de KB que contém imagem</td>
+            <td class="py-3 px-4 text-sm">Bases</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">5</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-796" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-796</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Clientes] Aba Timeline sem campo de texto para adicionar nova nota</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">5</td>
+            <td class="py-3 px-4 text-sm">Em andamento</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-795" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-795</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Recuperar senha] Após alterar senha com sucesso, login exibe toast de erro mas não informa se é erro de credenciais</td>
+            <td class="py-3 px-4 text-sm">-</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">5</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-784" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-784</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reunioes] Botao 'Ver na agenda' redireciona para /meetings em vez de abrir Google Calendar/Outlook</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">5</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-839" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-839</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Clientes] Botão fixar nota não funciona — apenas via menu 3 pontos</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">4</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-786" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-786</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reunioes] Criacao: horario padrao 00:05-00:00 (end antes de start) — considerar date/time picker</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#22c55e"></span><span class="text-sm">Low</span></td>
+            <td class="py-3 px-4 text-sm font-mono">4</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-603" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-603</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Knowledge Bases] Botões interativos sem ARIA labels (acessibilidade)</td>
+            <td class="py-3 px-4 text-sm">Bases</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#22c55e"></span><span class="text-sm">Low</span></td>
+            <td class="py-3 px-4 text-sm font-mono">3</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">8d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-748" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-748</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Recuperar Senha) Card com box cinza e CTA sem espaçamento</td>
+            <td class="py-3 px-4 text-sm">-</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#22c55e"></span><span class="text-sm">Low</span></td>
+            <td class="py-3 px-4 text-sm font-mono">3</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">3d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-835" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-835</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Reuniões] Resumo gerado sem formatação MD na primeira renderização</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#22c55e"></span><span class="text-sm">Low</span></td>
+            <td class="py-3 px-4 text-sm font-mono">3</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-798" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-798</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Oportunidades/Tarefas] Calendário dos filtros desformatado — sem espaçamento entre input e calendário</td>
+            <td class="py-3 px-4 text-sm">Oportunidades</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">3</td>
+            <td class="py-3 px-4 text-sm">Em andamento</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-317" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-317</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Clientes) Dados de teste misturados com clientes reais</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">2</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">28d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-313" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-313</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Clientes) Links mailto e wa.me renderizados sem email/telefone</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">2</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">28d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-797" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-797</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Clientes] Empty states das abas e features com ícones inconsistentes — tamanho, box e espessura (stroke) diferentes entre abas</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">2</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Sem atribuicao</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">1d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-375" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-375</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Login) Link Politica de Privacidade aponta para /auth/login (propria pagina)</td>
+            <td class="py-3 px-4 text-sm">Login</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Em andamento</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">28d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-374" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-374</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Perfil/Mobile) Botao Sair nao aparece na view mobile</td>
+            <td class="py-3 px-4 text-sm">Perfil</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Em andamento</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">28d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-367" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-367</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Bases) Erro de concordancia: 1 pastas em vez de 1 pasta</td>
+            <td class="py-3 px-4 text-sm">Bases</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Em andamento</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">28d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-303" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-303</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">Garantir que se 5 pessoas tiverem programado para o Meeting Bot entrar apenas 1</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">28d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-470" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-470</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Reuniões) Remover eventos pessoais e de local de trabalho da lista</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to test</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">16d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-468" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-468</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Agentes) Filtrar agentes por tag nos prompts e config de reuniões</td>
+            <td class="py-3 px-4 text-sm">Agentes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to test</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">16d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-499" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-499</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Reunioes) Pagina da reuniao nao carrega — erro geral ao abrir reuniao</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to test</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">15d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-547" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-547</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Login) Na primeira renderização da página, durante a checagem da autenticação ao invés do loading o usuário cai na tela de login</td>
+            <td class="py-3 px-4 text-sm">Login</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to test</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">10d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-546" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-546</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">(Tarefas) Campo "Data final" no modal de Nova Tarefa está com layout inconsistente — não segue o padrão de select dos demais campos e exibe ícone duplicado</td>
+            <td class="py-3 px-4 text-sm">Tarefas</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">10d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-575" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-575</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Agentes] Agente deletado (soft delete) ainda acessivel via GET /agents/:id</td>
+            <td class="py-3 px-4 text-sm">Agentes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">9d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-570" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-570</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Agentes] Funcionalidade Duplicar e editar nao implementada no dropdown</td>
+            <td class="py-3 px-4 text-sm">Agentes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">9d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-593" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-593</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">Problemas de entrar em calls do Teams</td>
+            <td class="py-3 px-4 text-sm">Reuniões</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Lucas</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">8d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-694" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-694</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Clientes] Aba Reunioes — erro/crash ao clicar no card de reuniao</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Tarefas pendentes</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-red-400 font-bold">7d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-693" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-693</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Clientes] Aba Tarefas — busca/filtros no nivel das tabs em vez do header</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to test</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">7d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-692" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-692</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[Clientes] Aba Oportunidades — busca/filtros no nivel das tabs e botao com cor fora do padrao</td>
+            <td class="py-3 px-4 text-sm">Clientes</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#eab308"></span><span class="text-sm">Medium</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to test</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-zinc-400">7d</td>
+        </tr>
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+            <td class="py-3 px-4"><a href="https://claint.atlassian.net/browse/CLAINT-675" target="_blank" class="text-blue-400 hover:text-blue-300 font-mono text-sm">CLAINT-675</a></td>
+            <td class="py-3 px-4 text-sm max-w-xs truncate">[API] POST pipeline-items com pipeline_id inexistente retorna 500</td>
+            <td class="py-3 px-4 text-sm">Oportunidades</td>
+            <td class="py-3 px-4"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background:#f97316"></span><span class="text-sm">High</span></td>
+            <td class="py-3 px-4 text-sm font-mono">-</td>
+            <td class="py-3 px-4 text-sm">Ready to deploy</td>
+            <td class="py-3 px-4 text-sm">Fernanda Itoda</td>
+            <td class="py-3 px-4 text-sm text-red-400 font-bold">7d</td>
+        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div class="flex flex-col gap-2 mb-8"><div class="flex items-center gap-3 px-4 py-3 rounded-r-lg bg-orange-500/8 border-l-4 border-orange-500 text-orange-400 text-sm"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> <span>16 bugs High abertos — alocar capacidade de fix</span></div><div class="flex items-center gap-3 px-4 py-3 rounded-r-lg bg-yellow-500/8 border-l-4 border-yellow-500 text-yellow-400 text-sm"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> <span>19 bugs abertos sem responsavel — triagem necessaria</span></div><div class="flex items-center gap-3 px-4 py-3 rounded-r-lg bg-orange-500/8 border-l-4 border-orange-500 text-orange-400 text-sm"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> <span>Reuniões: 8 bugs High+ abertos — considerar sprint de estabilizacao</span></div><div class="flex items-center gap-3 px-4 py-3 rounded-r-lg bg-orange-500/8 border-l-4 border-orange-500 text-orange-400 text-sm"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> <span>Configurações: 3 bugs High+ abertos — considerar sprint de estabilizacao</span></div><div class="flex items-center gap-3 px-4 py-3 rounded-r-lg bg-yellow-500/8 border-l-4 border-yellow-500 text-yellow-400 text-sm"><svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> <span>19 bug(s) aberto(s) ha mais de 7 dias — revisar se ainda sao validos</span></div></div>
+
+        <!-- Footer -->
+        <div class="text-center text-zinc-600 text-xs py-8">
+            Claint QA Dashboard &middot; Dados do Jira em tempo de geracao &middot; Rerun <code>python generate-dashboard.py</code> para atualizar
+        </div>
+    </div>
+
+    <script>
+    // --- Chart.js defaults ---
+    Chart.defaults.color = '#a1a1aa';
+    Chart.defaults.borderColor = '#27272a';
+    Chart.defaults.font.family = 'system-ui';
+
+    // --- Status Donut ---
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ["Tarefas pendentes", "Concluído", "Em andamento", "Ready to deploy", "Ready to test"],
+            datasets: [{
+                data: [27, 220, 6, 10, 6],
+                backgroundColor: ["#f97316", "#22c55e", "#3b82f6", "#8b5cf6", "#06b6d4"],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            cutout: '60%',
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, pointStyle: 'circle' } }
+            }
+        }
+    });
+
+    // --- Priority Bar (stacked: open + resolved) ---
+    new Chart(document.getElementById('priorityChart'), {
+        type: 'bar',
+        data: {
+            labels: ["Highest", "High", "Medium", "Low"],
+            datasets: [
+                {
+                    label: 'Abertos',
+                    data: [0, 16, 29, 4],
+                    backgroundColor: ["#dc2626", "#f97316", "#eab308", "#22c55e"],
+                    borderRadius: 4,
+                    barThickness: 32
+                },
+                {
+                    label: 'Resolvidos',
+                    data: [6, 9, 191, 14],
+                    backgroundColor: ["#7f1d1d", "#7c2d12", "#713f12", "#14532d"],
+                    borderRadius: 4,
+                    barThickness: 32
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 12 } } },
+            scales: {
+                x: { stacked: true, grid: { display: false } },
+                y: { stacked: true, grid: { display: false } }
+            }
+        }
+    });
+
+    // --- Feature Stacked Bar ---
+    new Chart(document.getElementById('featureChart'), {
+        type: 'bar',
+        data: {
+            labels: ["Clientes", "Agentes", "Reuniões", "Chat", "Bases", "Oportunidades", "Sem Epic", "Configurações", "Tarefas", "Perfil", "Login", "Market Data", "Landing Page"],
+            datasets: [
+                {
+                    label: 'Resolvidos',
+                    data: [37, 40, 21, 34, 25, 18, 16, 13, 12, 2, 0, 1, 1],
+                    backgroundColor: '#22c55e',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Abertos',
+                    data: [10, 3, 17, 0, 3, 4, 4, 4, 1, 1, 2, 0, 0],
+                    backgroundColor: '#f97316',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle' } } },
+            scales: {
+                x: { stacked: true, grid: { display: false } },
+                y: { stacked: true, grid: { display: false } }
+            }
+        }
+    });
+
+    // --- Heatmap Table ---
+    const allBugs = [{"key": "CLAINT-843", "summary": "[Reuniões] Acionáveis não geram notas na timeline do cliente — sem auditoria", "status": "Tarefas pendentes", "priority": "High", "labels": ["CLIENTES", "REUNIOES", "qa-manual"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 7.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-839", "summary": "[Clientes] Botão fixar nota não funciona — apenas via menu 3 pontos", "status": "Tarefas pendentes", "priority": "Medium", "labels": ["CLIENTES", "qa-manual"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 4.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-835", "summary": "[Reuniões] Resumo gerado sem formatação MD na primeira renderização", "status": "Tarefas pendentes", "priority": "Low", "labels": ["REUNIOES", "qa-manual"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 3.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-830", "summary": "[Reuniões] Nota criada no sidesheet de acionáveis é perdida e irrecuperável", "status": "Tarefas pendentes", "priority": "High", "labels": ["REUNIOES", "qa-manual"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 7.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-824", "summary": "[Reuniões] Criar tarefa via acionáveis retorna 'Invalid item data' mas cria tarefa — duplicatas", "status": "Tarefas pendentes", "priority": "High", "labels": ["REUNIOES", "qa-manual"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 7.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-819", "summary": "[Clientes] Endereço e contas não ficam gravados ao criar/editar cliente", "status": "Tarefas pendentes", "priority": "High", "labels": ["CLIENTES", "qa-manual"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 6.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-814", "summary": "[Reuniões] Recursion limit of 25 / HTTP 400 ao processar reunião", "status": "Tarefas pendentes", "priority": "High", "labels": ["REUNIOES", "api", "qa-manual"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 7.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-810", "summary": "[Reuniões] Modal de remoção do meetbot desaparece antes de confirmar — redirecionamento prematuro", "status": "Tarefas pendentes", "priority": "High", "labels": ["REUNIOES", "qa-manual"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 6.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-804", "summary": "[Bases] Modelo não consegue ler arquivos de KB que contém imagem", "status": "Tarefas pendentes", "priority": "Medium", "labels": ["BASES", "qa-manual"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 5.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-799", "summary": "(Oportunidades) Sem opção de excluir card individual no kanban", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 5.0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-798", "summary": "[Oportunidades/Tarefas] Calendário dos filtros desformatado — sem espaçamento entre input e calendário", "status": "Em andamento", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 3.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-797", "summary": "[Clientes] Empty states das abas e features com ícones inconsistentes — tamanho, box e espessura (stroke) diferentes entre abas", "status": "Tarefas pendentes", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 2.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-796", "summary": "[Clientes] Aba Timeline sem campo de texto para adicionar nova nota", "status": "Em andamento", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 5.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-795", "summary": "[Recuperar senha] Após alterar senha com sucesso, login exibe toast de erro mas não informa se é erro de credenciais", "status": "Tarefas pendentes", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 5.0, "assignee": "Sem atribuicao", "sprint": "43", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-786", "summary": "[Reunioes] Criacao: horario padrao 00:05-00:00 (end antes de start) — considerar date/time picker", "status": "Tarefas pendentes", "priority": "Low", "labels": ["REUNIOES", "qa-e2e", "ux"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 4.0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-785", "summary": "[Reunioes] Preparacao: 'Erro ao vincular clientes' ao selecionar cliente na tela inicial", "status": "Tarefas pendentes", "priority": "Medium", "labels": ["REUNIOES", "preparation", "qa-e2e"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 8.0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-784", "summary": "[Reunioes] Botao 'Ver na agenda' redireciona para /meetings em vez de abrir Google Calendar/Outlook", "status": "Tarefas pendentes", "priority": "Medium", "labels": ["REUNIOES", "calendar-sync", "qa-e2e"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 5.0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-783", "summary": "[Reunioes] Transcricao: editar nome de speaker nao reflete na UI sem recarregar pagina", "status": "Tarefas pendentes", "priority": "Medium", "labels": ["REUNIOES", "qa-e2e", "transcription"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 6.0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-782", "summary": "[Reunioes] Chat: botoes de feedback (positivo/negativo) retornam 'Erro ao enviar feedback'", "status": "Tarefas pendentes", "priority": "High", "labels": ["REUNIOES", "api", "chat", "qa-e2e"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 6.0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-781", "summary": "[Reunioes] Chat: indicador Pensando nao aparece durante geracao de resposta IA", "status": "Tarefas pendentes", "priority": "High", "labels": ["REUNIOES", "chat", "qa-e2e"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 7.0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-25", "updated": "2026-03-25", "age_days": 1}, {"key": "CLAINT-769", "summary": "[Reunioes] Reunioes sincronizadas do Google Calendar ficam presas com status IN_PROGRESS e nao sao clicaveis", "status": "Em andamento", "priority": "High", "labels": ["REUNIOES", "calendar-sync", "qa-e2e"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 8.0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-24", "updated": "2026-03-25", "age_days": 2}, {"key": "CLAINT-763", "summary": "[Clientes] Coluna Email vazia na listagem de clientes — dado não renderizado na tabela", "status": "Tarefas pendentes", "priority": "Medium", "labels": ["bug", "qa", "ui"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 5.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-03-24", "updated": "2026-03-25", "age_days": 2}, {"key": "CLAINT-762", "summary": "[Configurações] API: MEMBER acessa /v1/super-admin/organizations sem bloqueio (retorna 200)", "status": "Tarefas pendentes", "priority": "High", "labels": ["RBAC", "api", "bug", "qa", "security"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 9.0, "assignee": "Sem atribuicao", "sprint": "43", "resolution": "Unresolved", "created": "2026-03-24", "updated": "2026-03-25", "age_days": 2}, {"key": "CLAINT-761", "summary": "[Configurações] API: DELETE /v1/members/:id com token MEMBER retorna 500 em vez de 403", "status": "Tarefas pendentes", "priority": "High", "labels": ["RBAC", "api", "bug", "qa"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 7.0, "assignee": "Sem atribuicao", "sprint": "43", "resolution": "Unresolved", "created": "2026-03-24", "updated": "2026-03-25", "age_days": 2}, {"key": "CLAINT-760", "summary": "[Configurações] MEMBER acessa páginas de Super Admin (organizations, usage, jobs) — RBAC não bloqueia rotas administrativas", "status": "Tarefas pendentes", "priority": "High", "labels": ["RBAC", "bug", "qa", "security"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 9.0, "assignee": "Sem atribuicao", "sprint": "43", "resolution": "Unresolved", "created": "2026-03-24", "updated": "2026-03-25", "age_days": 2}, {"key": "CLAINT-754", "summary": "[Configurações] Botão \"Novo membro\" aparece sem guard de role (visível para MEMBER)", "status": "Tarefas pendentes", "priority": "Medium", "labels": [], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 7.0, "assignee": "Sem atribuicao", "sprint": "43", "resolution": "Unresolved", "created": "2026-03-23", "updated": "2026-03-25", "age_days": 3}, {"key": "CLAINT-750", "summary": "[Oportunidades] Botão \"Cancelar\" do sheet de criar pipeline não responde após criação com sucesso", "status": "Tarefas pendentes", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 5.0, "assignee": "Sem atribuicao", "sprint": "43", "resolution": "Unresolved", "created": "2026-03-23", "updated": "2026-03-25", "age_days": 3}, {"key": "CLAINT-749", "summary": "[Oportunidades] API PUT pipeline-items aceita edição sem permissão de escrita (retorna 200 em vez de 403)", "status": "Tarefas pendentes", "priority": "High", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 9.0, "assignee": "Sem atribuicao", "sprint": "43", "resolution": "Unresolved", "created": "2026-03-23", "updated": "2026-03-25", "age_days": 3}, {"key": "CLAINT-748", "summary": "(Recuperar Senha) Card com box cinza e CTA sem espaçamento", "status": "Ready to deploy", "priority": "Low", "labels": [], "epic_key": "", "epic_name": "", "sp": 3.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-23", "updated": "2026-03-25", "age_days": 3}, {"key": "CLAINT-747", "summary": "(Recuperar Senha) Input de nova senha fica bloqueado/readonly intermitentemente", "status": "Ready to deploy", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 6.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-23", "updated": "2026-03-25", "age_days": 3}, {"key": "CLAINT-745", "summary": "(Recuperar Senha) Erro exibido ao criar nova senha, porém senha é alterada com sucesso", "status": "Ready to deploy", "priority": "High", "labels": [], "epic_key": "", "epic_name": "", "sp": 8.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-23", "updated": "2026-03-25", "age_days": 3}, {"key": "CLAINT-716", "summary": "[Tarefas] API retorna 403 para pipeline inexistente em vez de 404", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa"], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-25", "age_days": 6}, {"key": "CLAINT-715", "summary": "[Tarefas] Card com caracteres especiais não é exibido após criação", "status": "Concluído", "priority": "Medium", "labels": ["bug", "qa", "ui"], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 3.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-23", "age_days": 6}, {"key": "CLAINT-714", "summary": "[Tarefas] URL com pipeline inexistente não redireciona nem mostra empty state", "status": "Concluído", "priority": "Medium", "labels": ["bug", "qa", "ui"], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 3.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-25", "age_days": 6}, {"key": "CLAINT-713", "summary": "[Clientes] Empty state das abas Oportunidades, Reuniões e Tarefas com ícone fora do padrão", "status": "Concluído", "priority": "Medium", "labels": ["bug", "qa", "ui"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-25", "age_days": 6}, {"key": "CLAINT-712", "summary": "[Configurações] UUID inválido em /settings/members/:id redireciona para /auth/suspended", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa-configuracoes"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 3.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-23", "age_days": 6}, {"key": "CLAINT-711", "summary": "[Configurações] ADMIN não consegue alterar role/status de membro via PATCH", "status": "Concluído", "priority": "High", "labels": ["api", "bug", "qa-configuracoes"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 5.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-23", "age_days": 6}, {"key": "CLAINT-710", "summary": "[Configurações] MEMBER DELETE invitation retorna 400 em vez de 403", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa-configuracoes"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-23", "age_days": 6}, {"key": "CLAINT-709", "summary": "[Configurações] API retorna 400 em vez de 401 para token inválido em DELETE invitations", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa-configuracoes"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-24", "age_days": 6}, {"key": "CLAINT-708", "summary": "[Configurações] API retorna 400 em vez de 401 para token inválido em PATCH/DELETE members", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa-configuracoes"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-23", "age_days": 6}, {"key": "CLAINT-707", "summary": "[Configurações] Super Admin fica barrado ao suspender org onde ele mesmo está logado", "status": "Concluído", "priority": "High", "labels": ["bug", "qa-configuracoes"], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 5.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-25", "age_days": 6}, {"key": "CLAINT-704", "summary": "[Assistente Central] Share dialog copy button state nao reverte apos 2 segundos", "status": "Concluído", "priority": "Low", "labels": ["ASSISTENTE-CENTRAL", "qa-e2e", "share"], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 3.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-24", "age_days": 6}, {"key": "CLAINT-703", "summary": "[Assistente Central] File chip persiste no input apos envio de mensagem", "status": "Concluído", "priority": "Medium", "labels": ["ASSISTENTE-CENTRAL", "file-upload", "qa-e2e"], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 4.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-24", "age_days": 6}, {"key": "CLAINT-702", "summary": "[Assistente Central] Mensagem do usuario desaparece apos erro mid-stream", "status": "Concluído", "priority": "Highest", "labels": ["ASSISTENTE-CENTRAL", "critical", "qa-e2e", "streaming"], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 8.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-24", "age_days": 6}, {"key": "CLAINT-701", "summary": "[Assistente Central] KB sources/citations nao renderizam no streaming de resposta", "status": "Concluído", "priority": "High", "labels": ["ASSISTENTE-CENTRAL", "qa-e2e", "streaming"], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 6.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-20", "updated": "2026-03-24", "age_days": 6}, {"key": "CLAINT-696", "summary": "[Tarefas] Filtros inconsistentes com padrao da aplicacao — inputs, counter e formato de tags diferentes", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-695", "summary": "[Oportunidades] Filtros inconsistentes com padrao da aplicacao — inputs, counter e formato de tags diferentes", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-694", "summary": "[Clientes] Aba Reunioes — erro/crash ao clicar no card de reuniao", "status": "Tarefas pendentes", "priority": "High", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-693", "summary": "[Clientes] Aba Tarefas — busca/filtros no nivel das tabs em vez do header", "status": "Ready to test", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-692", "summary": "[Clientes] Aba Oportunidades — busca/filtros no nivel das tabs e botao com cor fora do padrao", "status": "Ready to test", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-691", "summary": "[Clientes] Avatares desalinhados na aba Timeline do detalhe do cliente", "status": "Concluído", "priority": "Low", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-690", "summary": "[Clientes] Conteudo das abas do detalhe do cliente com espacamento lateral excessivo em telas grandes", "status": "Concluído", "priority": "Low", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-689", "summary": "[Clientes] Icones de oportunidades na aba Inicio com cores inconsistentes vs Figma", "status": "Concluído", "priority": "Low", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-688", "summary": "[Clientes] Tags no perfil lateral do cliente nao aplicam ao selecionar", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-687", "summary": "[Clientes] Aba Carteira — listagem quebrada/espacada ao colapsar chevron", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-686", "summary": "[Clientes] Avatares da listagem de clientes com iniciais desalinhadas verticalmente", "status": "Concluído", "priority": "Low", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-685", "summary": "[Clientes] Filtro por suitability não disponível no dropdown de filtros", "status": "Concluído", "priority": "Low", "labels": ["filtros", "qa-finding", "ux"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-684", "summary": "[API] GET /v1/clients ignora parâmetro limit na paginação", "status": "Concluído", "priority": "Medium", "labels": ["api", "paginacao", "qa-finding"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-23", "age_days": 7}, {"key": "CLAINT-683", "summary": "[API] POST /v1/clients aceita requisição sem X-Organization-Id", "status": "Concluído", "priority": "Low", "labels": ["api", "qa-finding"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-23", "age_days": 7}, {"key": "CLAINT-682", "summary": "[API] DELETE /v1/clients/:id sem auth retorna 400 em vez de 401", "status": "Concluído", "priority": "Low", "labels": ["api", "qa-finding"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-681", "summary": "[API] GET pipeline-items retorna formato {items:[...]} nao documentado", "status": "Concluído", "priority": "Low", "labels": ["api", "bug", "qa-oportunidades"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-20", "age_days": 7}, {"key": "CLAINT-680", "summary": "[API] POST pipeline-items sem X-Organization-Id retorna 201", "status": "Concluído", "priority": "Low", "labels": ["api", "bug", "qa-oportunidades"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-20", "age_days": 7}, {"key": "CLAINT-679", "summary": "[API] DELETE pipeline como non-owner retorna 400 em vez de 403", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa-oportunidades"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-20", "age_days": 7}, {"key": "CLAINT-678", "summary": "[API] DELETE pipeline-items retorna 400 — API usa soft-delete via PATCH", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa-oportunidades"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-20", "age_days": 7}, {"key": "CLAINT-677", "summary": "[API] PUT pipeline-items exige payload completo em vez de aceitar partial update", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa-oportunidades"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-676", "summary": "[API] GET pipeline inexistente retorna 403 em vez de 404", "status": "Concluído", "priority": "Medium", "labels": ["api", "bug", "qa-oportunidades"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-675", "summary": "[API] POST pipeline-items com pipeline_id inexistente retorna 500", "status": "Ready to deploy", "priority": "High", "labels": ["api", "bug", "qa-oportunidades"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-19", "updated": "2026-03-25", "age_days": 7}, {"key": "CLAINT-611", "summary": "[Knowledge Bases] Endpoint de download retorna 404 (não implementado)", "status": "Concluído", "priority": "Medium", "labels": ["KNOWLEDGE-BASES", "api", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 4.0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-19", "age_days": 8}, {"key": "CLAINT-610", "summary": "[Knowledge Bases] Member com permissão EDIT sem opções no dropdown Novo (intermitente)", "status": "Concluído", "priority": "Medium", "labels": ["KNOWLEDGE-BASES", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 5.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-609", "summary": "[Knowledge Bases] Member com permissão VIEW consegue fazer upload de arquivos", "status": "Concluído", "priority": "Highest", "labels": ["KNOWLEDGE-BASES", "qa-e2e", "security"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 9.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-608", "summary": "[Knowledge Bases] Member com permissão VIEW consegue excluir arquivos", "status": "Concluído", "priority": "Highest", "labels": ["KNOWLEDGE-BASES", "qa-e2e", "security"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 10.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-607", "summary": "[Knowledge Bases] Member com permissão VIEW consegue mover arquivos", "status": "Concluído", "priority": "Highest", "labels": ["KNOWLEDGE-BASES", "qa-e2e", "security"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 9.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-606", "summary": "[Knowledge Bases] Member com permissão VIEW consegue renomear arquivos", "status": "Concluído", "priority": "Highest", "labels": ["KNOWLEDGE-BASES", "qa-e2e", "security"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 9.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-605", "summary": "[Knowledge Bases] Ícones decorativos sem aria-hidden (acessibilidade)", "status": "Concluído", "priority": "Low", "labels": ["KNOWLEDGE-BASES", "a11y", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-19", "age_days": 8}, {"key": "CLAINT-604", "summary": "[Knowledge Bases] Tab order incorreta em elementos interativos (acessibilidade)", "status": "Concluído", "priority": "Low", "labels": ["KNOWLEDGE-BASES", "a11y", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-603", "summary": "[Knowledge Bases] Botões interativos sem ARIA labels (acessibilidade)", "status": "Ready to deploy", "priority": "Low", "labels": ["KNOWLEDGE-BASES", "a11y", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 3.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-18", "updated": "2026-03-25", "age_days": 8}, {"key": "CLAINT-602", "summary": "[Knowledge Bases] Status de processamento ERROR não é exibido na UI", "status": "Concluído", "priority": "Medium", "labels": ["KNOWLEDGE-BASES", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 5.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-601", "summary": "[Knowledge Bases] Sem mensagem de feedback quando offline", "status": "Concluído", "priority": "Low", "labels": ["KNOWLEDGE-BASES", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-600", "summary": "[Knowledge Bases] Acesso sem autenticação não redireciona para login", "status": "Concluído", "priority": "Medium", "labels": ["KNOWLEDGE-BASES", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 5.0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-19", "age_days": 8}, {"key": "CLAINT-599", "summary": "[Knowledge Bases] API aceita mover pasta para dentro do próprio filho (referência circular)", "status": "Concluído", "priority": "High", "labels": ["KNOWLEDGE-BASES", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 8.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-598", "summary": "[Knowledge Bases] SuperAdmin não visualiza KBs PRIVATE de outros usuários", "status": "Concluído", "priority": "High", "labels": ["KNOWLEDGE-BASES", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 7.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-597", "summary": "[Knowledge Bases] API aceita request sem header X-Organization-Id", "status": "Concluído", "priority": "Medium", "labels": ["KNOWLEDGE-BASES", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 4.0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-19", "age_days": 8}, {"key": "CLAINT-596", "summary": "[Knowledge Bases] API aceita nome com menos de 3 caracteres", "status": "Concluído", "priority": "Low", "labels": ["KNOWLEDGE-BASES", "qa-e2e"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-593", "summary": "Problemas de entrar em calls do Teams", "status": "Ready to deploy", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-18", "updated": "2026-03-25", "age_days": 8}, {"key": "CLAINT-592", "summary": "Duplicidade de bots entrando dentro da reunião", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-23", "age_days": 8}, {"key": "CLAINT-583", "summary": "[Agentes] API aceita POST /agents sem header X-Organization-Id — cria agente sem contexto de org", "status": "Concluído", "priority": "High", "labels": ["AGENTES", "api", "permissions", "qa-e2e", "security"], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-19", "age_days": 8}, {"key": "CLAINT-582", "summary": "[Agentes] API rejeita campo shared_with com 400 — feature SHARED nao implementada no backend", "status": "Concluído", "priority": "Medium", "labels": ["AGENTES", "api", "permissions", "qa-e2e"], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-24", "age_days": 8}, {"key": "CLAINT-581", "summary": "[Agentes] Itens do dropdown de ações do card não possuem role menuitem — possíveis itens ocultos", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-18", "updated": "2026-03-19", "age_days": 8}, {"key": "CLAINT-578", "summary": "[Agentes] 24 elementos interativos sem aria-label na pagina de agentes", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-577", "summary": "[Agentes] 404 Agent Not Found redireciona para /chats em vez de /agents", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-576", "summary": "[Agentes] Edição bloqueada — agentes criados sem categoria não podem ser salvos na edição", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-575", "summary": "[Agentes] Agente deletado (soft delete) ainda acessivel via GET /agents/:id", "status": "Ready to deploy", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-17", "updated": "2026-03-25", "age_days": 9}, {"key": "CLAINT-574", "summary": "[Agentes] Frontend aceita upload de .exe e .png sem validacao de tipo", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-573", "summary": "[Agentes] Controle de acesso permite member acessar agentes PRIVATE de outro user via API", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-571", "summary": "[Agentes] Busca dispara 1 request por tecla — debounce nao funciona", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-570", "summary": "[Agentes] Funcionalidade Duplicar e editar nao implementada no dropdown", "status": "Tarefas pendentes", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-17", "updated": "2026-03-25", "age_days": 9}, {"key": "CLAINT-569", "summary": "[Agentes] Overlay de loading global (z-50) bloqueia interacao com botoes do header", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Bugs Claint", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-18", "age_days": 9}, {"key": "CLAINT-568", "summary": "[Agentes] Frontend não valida campo Instruções como obrigatório — backend rejeita com 400 genérico", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-567", "summary": "[Agentes] Botão \"Criar\" não desabilita durante submit — permite cliques múltiplos", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-19", "age_days": 9}, {"key": "CLAINT-566", "summary": "[Agentes] Empty state não exibido quando lista retorna 0 resultados", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-562", "summary": "Falta de tratamento singular/plural no texto de contagem de arquivos", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-561", "summary": "Modo de exibição (tabela/cards) não persiste ao navegar entre páginas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-560", "summary": "Permitir criação de nova categoria diretamente no seletor durante criação/edição", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-559", "summary": "Melhorar confiabilidade e rastreabilidade do sync bidirecional de calendário", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-18", "age_days": 9}, {"key": "CLAINT-558", "summary": "Scroll do seletor de Categoria não funciona de forma intuitiva no side sheet", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-557", "summary": "Restaurar sincronização de calendário Microsoft (Outlook)", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-18", "age_days": 9}, {"key": "CLAINT-556", "summary": "Reuniões compartilhadas visíveis para todos os membros da equipe", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-18", "age_days": 9}, {"key": "CLAINT-555", "summary": "Arquivos selecionados via \"Adicionar da base\" não são efetivamente vinculados e removem arquivos existentes", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-554", "summary": "Upload local na edição sobrescreve arquivos existentes em vez de acrescentar", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-17", "updated": "2026-03-24", "age_days": 9}, {"key": "CLAINT-552", "summary": "Side sheet de edição de agentes não exibe arquivos de conhecimento já anexados anteriormente", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-16", "updated": "2026-03-24", "age_days": 10}, {"key": "CLAINT-551", "summary": "Modal expandido do campo \"Instruções\" de Agentes não sincroniza alterações, provoca perda intermitente de foco e causa erro fatal (crash) da aplicação durante a digitação", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-16", "updated": "2026-03-24", "age_days": 10}, {"key": "CLAINT-550", "summary": "Modal de detalhes do agente não exibe arquivos de conhecimento vinculados — seção \"Conhecimento\" sempre mostra \"Nenhum arquivo configurado\" independentemente dos arquivos existentes", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-16", "updated": "2026-03-24", "age_days": 10}, {"key": "CLAINT-549", "summary": "(Oportunidades) Empty state da tela de Oportunidades com texto incorreto (\"negócio\" ao invés de \"oportunidade\"), border radius e espessura do ícone divergentes do padrão", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-16", "updated": "2026-03-25", "age_days": 10}, {"key": "CLAINT-548", "summary": "(Tarefas) Empty state da tela de Tarefas com texto incorreto, border radius e espessura do ícone divergentes do padrão", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-16", "updated": "2026-03-25", "age_days": 10}, {"key": "CLAINT-547", "summary": "(Login) Na primeira renderização da página, durante a checagem da autenticação ao invés do loading o usuário cai na tela de login", "status": "Ready to test", "priority": "Medium", "labels": [], "epic_key": "CLAINT-388", "epic_name": "Login", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-16", "updated": "2026-03-23", "age_days": 10}, {"key": "CLAINT-546", "summary": "(Tarefas) Campo \"Data final\" no modal de Nova Tarefa está com layout inconsistente — não segue o padrão de select dos demais campos e exibe ícone duplicado", "status": "Ready to deploy", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-16", "updated": "2026-03-25", "age_days": 10}, {"key": "CLAINT-545", "summary": "Agente de geração de email produz corpo da mensagem sem acentuação — texto em português gerado em ASCII puro", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-16", "updated": "2026-03-24", "age_days": 10}, {"key": "CLAINT-544", "summary": "Tabs de categoria retornam 0 resultados após correção do filtro — IDs de categoria enviados pela API não correspondem aos dos agentes cadastrados", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-16", "updated": "2026-03-24", "age_days": 10}, {"key": "CLAINT-513", "summary": "Campo \"Pesquisar\" no submenu de Pipelines e Clientes do Assistente perde o foco após a primeira tecla — RovingFocusGroup intercepta eventos de teclado", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-13", "updated": "2026-03-24", "age_days": 13}, {"key": "CLAINT-512", "summary": "Botões de feedback (👍 e 👎) nas mensagens do Assistente retornam erro — endpoint de feedback inexistente no backend", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-13", "updated": "2026-03-24", "age_days": 13}, {"key": "CLAINT-511", "summary": "Nova conversa não aparece no histórico do Assistente de Reuniões até o usuário recarregar a página", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-13", "updated": "2026-03-23", "age_days": 13}, {"key": "CLAINT-510", "summary": "Tag \"Gerando resumo...\" exibida incorretamente na listagem de Reuniões para reuniões com resumo já gerado", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-13", "updated": "2026-03-22", "age_days": 13}, {"key": "CLAINT-509", "summary": "Label de organização no tooltip de participantes está hardcoded como \"Claint\" — prop organizationName não é passada pelo componente pai", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-24", "age_days": 14}, {"key": "CLAINT-508", "summary": "Tooltip de participantes na agenda de Reuniões não exibe label \"Clientes\" — cliente vinculado agrupado incorretamente sob label \"Claint\"", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-24", "age_days": 14}, {"key": "CLAINT-507", "summary": "Modal \"Vincular cliente\" exibe o organizador da reunião em vez do cliente já vinculado", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-23", "age_days": 14}, {"key": "CLAINT-506", "summary": "Filtro de participantes na feature Reuniões não exibe resultados — retorna \"Nenhuma reunião encontrada\" para qualquer seleção", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-23", "age_days": 14}, {"key": "CLAINT-505", "summary": "(Oportunidades e Tarefas) Campo de pesquisa no seletor de pipelines não aceita digitação nas features Oportunidades e Tarefas — TypeError no componente cmdk", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-24", "age_days": 14}, {"key": "CLAINT-504", "summary": "(Oportunidades e Tarefas) Pipeline/Kanban selecionado não persiste ao sair e retornar às telas de Oportunidades e Tarefas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-24", "age_days": 14}, {"key": "CLAINT-503", "summary": "(Oportunidades e Tarefas) Tela de erro \"Não foi possível carregar a página\" ao arrastar card no Kanban de Oportunidades e Tarefas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-24", "age_days": 14}, {"key": "CLAINT-502", "summary": "frontend não renderiza fórmulas matemáticas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-16", "age_days": 14}, {"key": "CLAINT-501", "summary": "agente não assimila joao silva = João Silva", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-12", "updated": "2026-03-16", "age_days": 14}, {"key": "CLAINT-500", "summary": "Quando clico na aba da visão calendário em reuniões abre o modal de configurações", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-21", "age_days": 15}, {"key": "CLAINT-499", "summary": "(Reunioes) Pagina da reuniao nao carrega — erro geral ao abrir reuniao", "status": "Ready to test", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-11", "updated": "2026-03-25", "age_days": 15}, {"key": "CLAINT-498", "summary": "(Chat) IA nao consegue buscar noticias na internet — sem acesso ao Google/web", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-497", "summary": "(Chat) Analista de carteiras retorna CRAs em formato ruim — precisa tabela detalhada por ativo", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-496", "summary": "(Chat) Historico do chat mostra agente errado — exibe o ultimo selecionado, nao o da pergunta", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-495", "summary": "(Chat) Analise de clientes mostra PL total da carteira ao inves do PL da posicao especifica", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-494", "summary": "(Chat) Grafico comparador de fundos com espaco branco grande entre legenda e eixo X", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-493", "summary": "(Chat) Comparador de fundos so exibe um fundo no grafico de comparacao", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-492", "summary": "Tabs de agente não estão filtrando", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-491", "summary": "(Clientes) Historico do chat nao abre quando ja esta com chat aberto", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-490", "summary": "(Clientes) Chat nao consegue responder sobre carteiras do cliente", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-489", "summary": "(Clientes) Botao historico do chat nao abre quando ja esta no chat", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-488", "summary": "(Clientes) Chat do cliente demora 8-25s para perguntas simples", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-25", "age_days": 15}, {"key": "CLAINT-487", "summary": "(Clientes) Chat do cliente precisa de rota com client ID", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-486", "summary": "Permissionamento (edição) de agentes para lógica system agent x regular agent", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-485", "summary": "Upload de arquivos no agente", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-484", "summary": "(Chat) Chat exibe \"terminated\" ao puxar menu de carteira — possível estouro de memória", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-16", "age_days": 15}, {"key": "CLAINT-483", "summary": "[A7] Marcelo não consegue app.newsco.ai", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-11", "updated": "2026-03-17", "age_days": 15}, {"key": "CLAINT-480", "summary": "(Clientes) Chat do cliente demora 3-4s para primeira resposta", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-25", "age_days": 16}, {"key": "CLAINT-477", "summary": "(Agentes) Analista de clientes retorna informação errada ao consultar carteiras", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-16", "age_days": 16}, {"key": "CLAINT-476", "summary": "(Clientes) Chat do cliente não responde corretamente sobre carteiras importadas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-16", "age_days": 16}, {"key": "CLAINT-475", "summary": "(Reuniões) Transcrição cortando palavras e falas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-23", "age_days": 16}, {"key": "CLAINT-474", "summary": "(Reuniões) Não detecta participantes das reuniões", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#41", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-23", "age_days": 16}, {"key": "CLAINT-472", "summary": "(Agentes) Prompt não aparece ao editar agente", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-16", "age_days": 16}, {"key": "CLAINT-471", "summary": "(Clientes) Reuniões não filtradas pelo cliente selecionado", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-16", "age_days": 16}, {"key": "CLAINT-470", "summary": "(Reuniões) Remover eventos pessoais e de local de trabalho da lista", "status": "Ready to test", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-10", "updated": "2026-03-25", "age_days": 16}, {"key": "CLAINT-469", "summary": "(Reuniões) Centralizar visualização no dia atual ao entrar na página", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-11", "age_days": 16}, {"key": "CLAINT-468", "summary": "(Agentes) Filtrar agentes por tag nos prompts e config de reuniões", "status": "Ready to test", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-03-10", "updated": "2026-03-25", "age_days": 16}, {"key": "CLAINT-467", "summary": "(Agentes) Agentes de preparação, resumo e acionáveis ausentes nos white labels", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-10", "updated": "2026-03-13", "age_days": 16}, {"key": "CLAINT-465", "summary": "Nome editado do cliente nao atualiza no Chat do perfil", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-09", "updated": "2026-03-16", "age_days": 17}, {"key": "CLAINT-463", "summary": "BUG NEWSCO GERAL", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-09", "updated": "2026-03-10", "age_days": 17}, {"key": "CLAINT-456", "summary": "Tabela de clientes quando tem mais que 30 itens, buga o footer.", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-06", "updated": "2026-03-11", "age_days": 20}, {"key": "CLAINT-445", "summary": "[ATIVA] Taxa variável < Selic-2 deve exibir IPCA+ (não apenas variável)", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #40", "resolution": "Itens concluídos", "created": "2026-03-05", "updated": "2026-03-13", "age_days": 21}, {"key": "CLAINT-444", "summary": "(Agentes) Upload de arquivos dentro de agente não funciona", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #39", "resolution": "Itens concluídos", "created": "2026-03-04", "updated": "2026-03-09", "age_days": 22}, {"key": "CLAINT-435", "summary": "Pie chart e Line chart na lâmina não renderizam", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #39", "resolution": "Itens concluídos", "created": "2026-03-03", "updated": "2026-03-04", "age_days": 23}, {"key": "CLAINT-433", "summary": "Testes e correções de bugs do meetingbot (Meet/Teams/Zoom)", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #39", "resolution": "Itens concluídos", "created": "2026-03-03", "updated": "2026-03-09", "age_days": 23}, {"key": "CLAINT-431", "summary": "Integrar botão Adicionar participantes dentro da página de reunião", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "", "epic_name": "", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-02", "age_days": 27}, {"key": "CLAINT-408", "summary": "[Bases] Excluir base pode nao efetuar a exclusao", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-407", "summary": "[Bases] Assistant nao faz RAG - ignora documentos da base", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-405", "summary": "[Agentes] Campo de instrucoes no edit nao mostra conteudo real", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-404", "summary": "[Agentes] Dropdown de categorias fica em Carregando infinitamente", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-403", "summary": "[Reunioes] Reuniao instantanea (Iniciar agora) nao cria reuniao", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-402", "summary": "[Reunioes] Agendar reuniao nao abre formulario de agendamento", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-400", "summary": "[Oportunidades] Nova oportunidade criada sem formulario previo", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-399", "summary": "[Oportunidades] Editar nome/valor da oportunidade nao persiste", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-396", "summary": "[Clientes] Nome duplo no display do cliente (iniciais concatenadas)", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-395", "summary": "[Clientes] Endereco nao e salvo na criacao do cliente", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-392", "summary": "[Chat] Email do usuario mostrado como texto literal Email", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-391", "summary": "[Chat] @mention popup nao aparece ao digitar @", "status": "Concluído", "priority": "Medium", "labels": ["qa-deep-test"], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-27", "updated": "2026-03-25", "age_days": 27}, {"key": "CLAINT-375", "summary": "(Login) Link Politica de Privacidade aponta para /auth/login (propria pagina)", "status": "Em andamento", "priority": "Medium", "labels": [], "epic_key": "CLAINT-388", "epic_name": "Login", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-374", "summary": "(Perfil/Mobile) Botao Sair nao aparece na view mobile", "status": "Em andamento", "priority": "Medium", "labels": [], "epic_key": "CLAINT-387", "epic_name": "Perfil", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-367", "summary": "(Bases) Erro de concordancia: 1 pastas em vez de 1 pasta", "status": "Em andamento", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-366", "summary": "(Home) Overlay invisivel bloqueia toda interacao na pagina", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-365", "summary": "(Bases) URL muda para /agents ao abrir detalhe da base", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-364", "summary": "(Bases) Tab Compartilhado comigo navega para outra pagina em vez de filtrar", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-363", "summary": "(Chat) Opcoes do chat (three dots) nao abre menu de contexto", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-356", "summary": "(Chat) Mensagens nao visiveis ao abrir conversa - scroll posicionado errado", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-354", "summary": "(Chat) Textarea nao aceita interacao Playwright standard - problema a11y", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-348", "summary": "(Agentes) Toggle grid/list view nao altera a visualizacao", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-346", "summary": "(Agentes/Card) Botao opcoes (tres pontos) nao abre menu dropdown", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-345", "summary": "(Agentes) Elementos nao acessiveis via aria-ref - problema de a11y", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-344", "summary": "(Agentes/Criar) Dropdown de categoria mostra Nenhuma categoria encontrada - BLOQUEIA criacao", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-341", "summary": "(Tarefas) Nome do usuario inconsistente - GabrielTest CantuTest vs Gabriel Cantu", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-338", "summary": "(Tarefas) Botao Novo Pipeline nao funciona no primeiro click apos carregar pagina", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-335", "summary": "(Tarefas) Elementos nao acessiveis via aria-ref - problema de a11y", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-334", "summary": "(Tarefas/Pipeline) Crash ao remover coluna no dialog de criacao de pipeline", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-333", "summary": "(Oportunidades) Cards kanban com role=button incorreto para acessibilidade", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-327", "summary": "(Oportunidades) Nova oportunidade cria card sem formulário", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 6.0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-326", "summary": "(Oportunidades) Click timeout em todos os elementos via browser automation", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-321", "summary": "(Settings/Design System) Navegação direta falha na 1ª tentativa", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-320", "summary": "(Settings/Tools) Rota /settings/tools renderiza Design System", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-319", "summary": "(Settings) Elementos interativos não clicáveis em todas as páginas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-318", "summary": "(Settings/Membros) Não existe botão Novo membro / Convidar", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-317", "summary": "(Clientes) Dados de teste misturados com clientes reais", "status": "Tarefas pendentes", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 2.0, "assignee": "Sem atribuicao", "sprint": "Bugs Claint", "resolution": "Unresolved", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-313", "summary": "(Clientes) Links mailto e wa.me renderizados sem email/telefone", "status": "Ready to deploy", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 2.0, "assignee": "Fernanda Itoda", "sprint": "#42", "resolution": "Unresolved", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-312", "summary": "(Clientes) Combobox linhas por página não abre dropdown", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-311", "summary": "(Clientes) Checkboxes de seleção não mudam de estado", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-310", "summary": "(Clientes) Sorting não funciona ao clicar no header da tabela", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-309", "summary": "(Clientes) Botões de ícone na toolbar sem função ao clicar", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-308", "summary": "(Clientes) Sem campo de busca visível na página", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-307", "summary": "(Clientes) Click na row não navega para detalhe do cliente", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-306", "summary": "(Clientes) Botão Novo cliente não abre dialog/modal", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Sem atribuicao", "sprint": "-", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-305", "summary": "Verificar se sync do Google Calendar está correto", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-03-02", "age_days": 28}, {"key": "CLAINT-304", "summary": "Bookbuilding de copasa (tradicionais) errado: eh dia 12/03", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-389", "epic_name": "Market Data", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-26", "updated": "2026-02-26", "age_days": 28}, {"key": "CLAINT-303", "summary": "Garantir que se 5 pessoas tiverem programado para o Meeting Bot entrar apenas 1", "status": "Ready to deploy", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "#42", "resolution": "Unresolved", "created": "2026-02-26", "updated": "2026-03-25", "age_days": 28}, {"key": "CLAINT-300", "summary": "Coluna de checkbox na tabela de Clientes muito estreita — nomes cortados", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-24", "updated": "2026-03-02", "age_days": 30}, {"key": "CLAINT-296", "summary": "Verificar Configurações → Ajuda", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-24", "updated": "2026-03-02", "age_days": 30}, {"key": "CLAINT-295", "summary": "Configurações → Membros não funciona", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-24", "updated": "2026-02-26", "age_days": 30}, {"key": "CLAINT-282", "summary": "(LP) Tela grande está quebrando a imagem do hero", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-116", "epic_name": "Landing Page", "sp": 0, "assignee": "Marcelo Duarte", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-24", "updated": "2026-03-02", "age_days": 30}, {"key": "CLAINT-281", "summary": "(Bases) Permissionamento por seleção de usuário não está integrada", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-23", "updated": "2026-02-26", "age_days": 31}, {"key": "CLAINT-222", "summary": "(Chats) Quando faço uma pergunta com um arquivo ou base anexada mas não digo diretamente pra olhar eles, o chat faz um search web e nunca olha", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-20", "updated": "2026-02-26", "age_days": 34}, {"key": "CLAINT-221", "summary": "(Chats/Reuniões) Sheet do assistente não abre em /meetings", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-20", "updated": "2026-02-26", "age_days": 34}, {"key": "CLAINT-209", "summary": "(Super Admin/Organizações) Não é possível entrar na organização e ver/editar os dados de membros, agentes e bases", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-386", "epic_name": "Configurações", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-19", "updated": "2026-02-26", "age_days": 35}, {"key": "CLAINT-204", "summary": "(Agents) Modal só aparece para agentes que não posso editar", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-18", "updated": "2026-02-26", "age_days": 36}, {"key": "CLAINT-203", "summary": "(Tarefas/Oportunidades) Segregar pipelines de tarefas e oportunidades", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-12", "updated": "2026-02-26", "age_days": 42}, {"key": "CLAINT-200", "summary": "(Oportunidades) Ao mover um card verticalmente a página exibe erro", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-382", "epic_name": "Oportunidades", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-199", "summary": "(Tarefas/Oportunidades) Card não respeita largura da coluna e oculta parte das informações", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-198", "summary": "(Tarefas) Ao criar/editar uma tarefa o front exibe \"sistema\" ao invés do nome do usuário", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-383", "epic_name": "Tarefas", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-197", "summary": "(Perfil) Remover (ou substituir) dados mockados em Usuário > Contas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-387", "epic_name": "Perfil", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-196", "summary": "(Perfil) Não é possível remover ou adicionar um novo avatar", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-387", "epic_name": "Perfil", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-195", "summary": "(Chat) Links para fontes (arquivos anexados) não estão disponíveis", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-194", "summary": "(Bases) Assistente de bases não funciona e não grava conversas no histórico", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Bugs Claint", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-193", "summary": "(Bases) Tooltips no preview de arquivos estão com texto oculto no modo dark", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-192", "summary": "(Bases) Botão \"mover\" disabled no modal mesmo após seleção", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-190", "summary": "(Bases) Compartilhar bases não funciona", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-385", "epic_name": "Bases", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-179", "summary": "(Agentes) Ações em massa da view de tabela não exibe ação de exclusão", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-178", "summary": "(Agentes) \"Linhas por página\" da paginação mockado sem seletor", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-177", "summary": "(Agentes) Tabs de categorias de agentes não estão sendo exibidas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-176", "summary": "(Agentes) Não é possível criar/editar agentes", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-174", "summary": "(Agentes) Botão usar agente no modal retorna erro 400 e não adiciona ao chat", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-384", "epic_name": "Agentes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-172", "summary": "(Clientes/Atividades) Upload de Audio / Transcrição", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-11", "updated": "2026-02-26", "age_days": 43}, {"key": "CLAINT-167", "summary": "(Chat) Botão para excluir conversa dentro do chat não funciona", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-09", "updated": "2026-02-26", "age_days": 45}, {"key": "CLAINT-166", "summary": "(Chat) Botão de mais ações no histórico do chat fica parte ocultado ao redimensionar", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-09", "updated": "2026-02-26", "age_days": 45}, {"key": "CLAINT-165", "summary": "(Chat) Ao renomear uma conversa o input não permite adicionar espaços entre as palavras", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-09", "updated": "2026-02-26", "age_days": 45}, {"key": "CLAINT-161", "summary": "(Chat) Quando saio de um chat enquanto a IA está pensando o output não é renderizado após retornar.", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-09", "updated": "2026-02-25", "age_days": 45}, {"key": "CLAINT-144", "summary": "Corrigir upload de carteira de cliente (1:1)", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-09", "updated": "2026-02-11", "age_days": 45}, {"key": "CLAINT-109", "summary": "Bug akiva: Analista de Clientes não funciona", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "gabriel", "sprint": "Sprint #39", "resolution": "Itens concluídos", "created": "2026-02-06", "updated": "2026-03-06", "age_days": 48}, {"key": "CLAINT-106", "summary": "(Chat) Não encontra o fundo", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-20", "age_days": 49}, {"key": "CLAINT-105", "summary": "(Chat) Quando dou enter, ir para o bottom", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-20", "age_days": 49}, {"key": "CLAINT-104", "summary": "(Chats) Comparador bugado", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #39", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-03-04", "age_days": 49}, {"key": "CLAINT-103", "summary": "(Chats) Tabelas quedrabas:", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-23", "age_days": 49}, {"key": "CLAINT-102", "summary": "(Chats) Quando abrir histórico, começar do bottom do chat", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-20", "age_days": 49}, {"key": "CLAINT-101", "summary": "(Agentes) Exportar para Word", "status": "Concluído", "priority": "High", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #39", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-03-04", "age_days": 49}, {"key": "CLAINT-88", "summary": "(Chats) Mensagem de erro de Upload com Container mt pequeno", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-20", "age_days": 49}, {"key": "CLAINT-87", "summary": "(Chats) Não consegue ler arquivos", "status": "Concluído", "priority": "High", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-11", "age_days": 49}, {"key": "CLAINT-80", "summary": "(Cliente/Carteira) Colocar Rentabilidade Mês e Ganho Financeiro Mês", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-19", "age_days": 49}, {"key": "CLAINT-79", "summary": "(Cliente/Carteira) Ajustar UI de Carteiras com telas menores", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-19", "age_days": 49}, {"key": "CLAINT-78", "summary": "(Cliente/Carteira) Ajustar download de Carteiras", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-19", "age_days": 49}, {"key": "CLAINT-77", "summary": "(Clientes) Chat do cliente não está funcionando", "status": "Concluído", "priority": "High", "labels": [], "epic_key": "CLAINT-1", "epic_name": "Chat", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-11", "age_days": 49}, {"key": "CLAINT-76", "summary": "(Clientes) Não tem E-mail na infos Cliente. Deveria ser um campo a parte", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-11", "age_days": 49}, {"key": "CLAINT-75", "summary": "(Clientes) Tirar restrição de 3chars do nome do cliente (deixar apenas 1)", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-19", "age_days": 49}, {"key": "CLAINT-74", "summary": "(Reuniões) Não tem o botão de entrar em reunião em \"Reuniões\"", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Bugs Claint", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-23", "age_days": 49}, {"key": "CLAINT-73", "summary": "(Clientes) Retirar Tags automaticas", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-113", "epic_name": "Clientes", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-19", "age_days": 49}, {"key": "CLAINT-72", "summary": "(Reuniões) Retirar \"Vincular com o Cliente\" dentro de Cliente", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Fernanda Itoda", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-23", "age_days": 49}, {"key": "CLAINT-71", "summary": "(Reuniões) Opção \"Transcrever\" tem que vir ON sempre", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-25", "age_days": 49}, {"key": "CLAINT-70", "summary": "(Reuniões) Não está pegando o audio da reunião corretamente", "status": "Concluído", "priority": "Highest", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-03-02", "age_days": 49}, {"key": "CLAINT-69", "summary": "(Reuniões) Demora muito para entrar no call On Demand", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #38 - O LANÇAMENTO 🚀", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-03-02", "age_days": 49}, {"key": "CLAINT-68", "summary": "(Clientes/Reuniões) Rota errada", "status": "Concluído", "priority": "Medium", "labels": [], "epic_key": "CLAINT-112", "epic_name": "Reuniões", "sp": 0, "assignee": "Lucas", "sprint": "Sprint #37", "resolution": "Itens concluídos", "created": "2026-02-05", "updated": "2026-02-11", "age_days": 49}];
+    const features = [...new Set(allBugs.map(b => b.epic_name || 'Sem Epic'))];
+    const priorities = ['Highest', 'High', 'Medium', 'Low'];
+    const heatBody = document.getElementById('heatmapBody');
+
+    features.sort((a, b) => {
+        const aTotal = allBugs.filter(bug => (bug.epic_name || 'Sem Epic') === a).length;
+        const bTotal = allBugs.filter(bug => (bug.epic_name || 'Sem Epic') === b).length;
+        return bTotal - aTotal;
+    });
+
+    features.forEach(f => {
+        const row = document.createElement('tr');
+        row.className = 'border-b border-zinc-800';
+        let cells = `<td class="py-2 px-3 text-sm">${f}</td>`;
+        priorities.forEach(p => {
+            const count = allBugs.filter(b => (b.epic_name || 'Sem Epic') === f && b.priority === p).length;
+            const openCount = allBugs.filter(b => (b.epic_name || 'Sem Epic') === f && b.priority === p && b.resolution === 'Unresolved').length;
+            let bg = '';
+            if (openCount > 0 && (p === 'Highest' || p === 'High')) bg = 'background: rgba(239,68,68,0.15)';
+            else if (count > 3) bg = 'background: rgba(234,179,8,0.1)';
+            const display = count > 0 ? (openCount > 0 ? `${count} <span class="text-red-400 text-xs">(${openCount})</span>` : `${count}`) : '-';
+            cells += `<td class="text-center py-2 px-2 text-sm" style="${bg}">${display}</td>`;
+        });
+        row.innerHTML = cells;
+        heatBody.appendChild(row);
+    });
+
+    // --- Table Filter ---
+    const searchInput = document.getElementById('searchBugs');
+    const filterPrio = document.getElementById('filterPriority');
+    const tableRows = document.querySelectorAll('#bugsTable tbody tr');
+
+    function filterTable() {
+        const search = searchInput.value.toLowerCase();
+        const prio = filterPrio.value;
+        tableRows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const prioText = row.querySelector('td:nth-child(4)')?.textContent.trim() || '';
+            const matchSearch = !search || text.includes(search);
+            const matchPrio = !prio || prioText.includes(prio);
+            row.style.display = matchSearch && matchPrio ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', filterTable);
+    filterPrio.addEventListener('change', filterTable);
+    </script>
+</body>
+</html>
